@@ -1,16 +1,32 @@
-#include <iostream>
+#ifndef LINEAR_ALGEBRA_H
+#define LINEAR_ALGEBRA_H
+
 #include <vector>
-#include <string>
+#include <iostream>
+#include <stdexcept>
+#include <memory>
 
-using namespace std;
+namespace LinearAlgebra {
 
-int main()
-{
-   vector<int> matrix {1, 2, 3, 4};
+template<typename T, size_t R, size_t C>
 
-   for (const int& word : matrix)
-   {
-      cout << word << " ";
+class Matrix {
+   T* data; 
+
+public:
+   Matrix() : data(new T[R*C]) {}
+
+   ~Matrix(){ delete [] data; }
+
+   inline T* operator[](int row) {
+      return &data[row * C];
    }
-   cout << endl;
-}
+
+   inline const T* operator[](int row) const {
+      return &data[row * C];
+   }
+};
+
+}  // End of namespace LinearAlgebra
+
+#endif // LINEAR_ALGEBRA_H
