@@ -5,7 +5,7 @@ CXX = g++
 CXXFLAGS = -Wall -Wextra -std=c++11
 
 # Source files
-SOURCES = test.cpp
+SOURCES = unit_tests.cpp
 
 # Object files generated from source files
 OBJECTS = $(SOURCES:.cpp=.o)
