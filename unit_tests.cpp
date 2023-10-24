@@ -4,6 +4,7 @@
 #include "linear_algebra.h"
 #include <iostream>
 #include <cassert>
+#include <vector>
 
 void testDefaultConstructor() {
    std::cout << "Testing Default Constructor...\n";
@@ -16,6 +17,18 @@ void testDefaultConstructor() {
 void testListConstructor() {
     std::cout << "Testing List Constructor...\n";
     LinearAlgebra::Matrix<int> matrix(2, 2, {{1, 2}, {3, 4}});
+    std::cout << "Expected Output:\n1 2 \n3 4 \n";
+    assert(matrix.get(0, 0) == 1 && matrix.get(0, 1) == 2 && matrix.get(1, 0) == 3 && matrix.get(1, 1) == 4);
+    std::cout << "Actual Output: \n" << matrix << "\n";
+}
+
+void testVectorConstructor() {
+    std::cout << "Testing Vector Constructor...\n";
+    std::vector<std::vector<int>> vector_example = {
+        {1, 2},
+        {3, 4}
+    };
+    LinearAlgebra::Matrix<int> matrix(2, 2, vector_example);
     std::cout << "Expected Output:\n1 2 \n3 4 \n";
     assert(matrix.get(0, 0) == 1 && matrix.get(0, 1) == 2 && matrix.get(1, 0) == 3 && matrix.get(1, 1) == 4);
     std::cout << "Actual Output: \n" << matrix << "\n";
@@ -129,6 +142,7 @@ void testLargeMultiplication() {
     std::cout << "30x40 Matrix:\n" << matrixB << "\n";
     // Multiplication
     LinearAlgebra::Matrix<int> result = matrixA * matrixB;
+    assert(result.getRows() == matrixA.getRows() && result.getCols() == matrixB.getCols());
     std::cout << "Result of 20x30 multiplied by 30x40:\n" << result << "\n";
 }
 
@@ -160,6 +174,7 @@ int main() {
     // All test cases
     testDefaultConstructor();
     testListConstructor();
+    testVectorConstructor();
     testListConstructorException();
     testGetAndSet();
     testTranspose();

@@ -1,3 +1,9 @@
+/**
+ * Portable & High-performance Linear Algebra Library 
+ * Created by Hou Wai Wan for Brain Corp intern assesment.
+ * 
+*/
+
 #ifndef LINEAR_ALGEBRA_H
 #define LINEAR_ALGEBRA_H
 
@@ -6,55 +12,110 @@
 #include <initializer_list>
 #include <stdexcept>
 
+/**
+ * The Linear Algebra library currently contains a Matrix class with its associated constructors, some overloaded operators,
+ * getters & setters, and two primary methods:
+ * 
+ * 1) A multiplication method, implemented via the overloaded "*" operator
+ * 2) A transpose method
+ * 
+ * The primary implementation of the Matrix itself is via the use of a C style contiguos array, instead of the more
+ * straightforward nested vector implementation. This allows for slightly better access times and performance. 
+ * This "flattened" matrix is accessed and manipulated with the member methods of the Matrix class.
+*/
 namespace LinearAlgebra {
 
+// Class for representing a matrix with generic Scalar type, this can include int, double, float etc.
 template<typename Scalar> 
 class Matrix 
 {
    protected:
       
-      Scalar* matrix_data;
-      int rows;
-      int cols;
+      Scalar* matrix_data; // Pointer to the flattened matrix data.
+      int rows; // Number of rows in the matrix.
+      int cols; // Number of columns in the matrix.
 
-   public:
-      // Default Constructor
-      Matrix(int input_rows, int input_cols) 
-         : matrix_data(new Scalar[input_rows * input_cols]), rows(input_rows), cols(input_cols) {}
-
-      // Constructor for taking in vector representation
-      Matrix(int input_rows, int input_cols, std::initializer_list<std::initializer_list<Scalar>> init_list) 
-         : matrix_data(new Scalar[input_rows * input_cols]), rows(input_rows), cols(input_cols) {
-         
+      /**
+       * Helper function to initialize matrix_data from a 2D range (like 2D vector or initializer list).
+       * 
+       * @param input_list: Either a 2D vector or nested initializer list
+       * @throws Throws an exception if the provided range exceeds matrix dimensions 
+       *    or if the number of elements in a data row is incorrect.
+      */ 
+      template<typename RangeType>
+      void initializeFrom2DRange(const RangeType& input_list) {
          int row = 0;
-         for (const auto& curr_row : init_list) {
+         for (const auto& curr_row : input_list) {
             int col = 0;
             for (const auto& elem : curr_row) {
-               if (row >= input_rows || col >= input_cols) {
-                  throw std::out_of_range("Initializer list exceeds matrix dimensions");
+               if (row >= rows || col >= cols) {
+                  throw std::out_of_range("Data exceeds matrix dimensions");
                }
                matrix_data[row * cols + col] = elem;
-               ++col;
+               col++;
             }
-            if (col != input_cols) {
-               throw std::invalid_argument("Incorrect number of elements in initializer list row");
+            if (col != cols) {
+               throw std::invalid_argument("Incorrect number of elements in data row");
             }
-            ++row;
+            row++;
          }
       }
 
-      // Copy constructor
+   public:
+      /**
+       * Default Constructor: Initialize an empty matrix with specified dimensions.
+       * @param input_rows: Number of rows for the new matrix.
+       * @param input_cols: Number of columns for the new matrix.
+       */
+      Matrix(int input_rows, int input_cols) 
+         : matrix_data(new Scalar[input_rows * input_cols]), rows(input_rows), cols(input_cols) {}
+
+       /**
+       * Constructor to initialize matrix using an initializer list.
+       * 
+       * Example: LinearAlgebra::Matrix<int> matrix(2, 2, {{1, 2}, {3, 4}});
+       * 
+       * @param input_rows: Number of rows for the new matrix.
+       * @param input_cols: Number of columns for the new matrix.
+       * @param init_list: Initializer list to populate the matrix.
+       */
+      Matrix(int input_rows, int input_cols, std::initializer_list<std::initializer_list<Scalar>> init_list) 
+         : matrix_data(new Scalar[input_rows * input_cols]), rows(input_rows), cols(input_cols) {
+         initializeFrom2DRange(init_list);
+      }
+
+      /**
+       * Constructor to initialize matrix using a 2D vector.
+       * @param input_rows: Number of rows for the matrix.
+       * @param input_cols: Number of columns for the matrix.
+       * @param input_vector: 2D vector to populate the matrix.
+       */
+      Matrix(int input_rows, int input_cols, const std::vector<std::vector<Scalar>>& input_vector) 
+         : matrix_data(new Scalar[input_rows * input_cols]), rows(input_rows), cols(input_cols) {
+         initializeFrom2DRange(input_vector);
+      }
+
+      /**
+       * Copy constructor.
+       * @param other: Another matrix object to be copied.
+       */
       Matrix(const Matrix<Scalar>& other) 
          : matrix_data(new Scalar[other.rows * other.cols]), rows(other.rows), cols(other.cols) {
-         
          std::copy(other.matrix_data, other.matrix_data + rows * cols, matrix_data);
       }
 
-      // Move constructor
+      /**
+       * Move constructor for efficient matrix creation by moving data.
+       * @param other: Another matrix object.
+       */
       Matrix(Matrix<Scalar>&& other) noexcept
          : matrix_data(std::move(other.matrix_data)), rows(std::move(other.rows)), cols(std::move(other.cols)) {}
       
-      // Copy assignment using copy-swap idiom
+      /**
+       * Copy assignment operator.
+       * @param other: Another matrix object to be copied.
+       * @returns: This matrix object after copying data from the provided matrix.
+       */
       Matrix<Scalar>& operator=(Matrix<Scalar> other) {
          std::swap(matrix_data, other.matrix_data);
          std::swap(rows, other.rows);
@@ -62,7 +123,11 @@ class Matrix
          return *this;
       }
 
-      // Move assignment
+      /**
+       * Move assignment operator for efficient matrix assignment.
+       * @param other: Another matrix object.
+       * @returns: This matrix object after moving data from the provided matrix.
+       */
       Matrix<Scalar>& operator=(Matrix<Scalar>&& other) noexcept {
          matrix_data = std::move(other.matrix_data);
          rows = std::move(other.rows);
@@ -73,11 +138,28 @@ class Matrix
       // Destructor
       ~Matrix(){ delete [] matrix_data; }
 
-      // Getters for rows & cols
+      /**
+       * GETTER
+       * Get the number of rows in the matrix.
+       * @returns: Number of rows in the matrix.
+       */
       int getRows() const { return rows; }
+
+      /**
+       * GETTER
+       * Get the number of columns in the matrix.
+       * @returns: Number of columns in the matrix.
+       */
       int getCols() const { return cols; }
 
-      // Getter for specific element in the Matrix
+      /**
+       * GETTER
+       * Get the value of a specific cell in the matrix.
+       * @param row: Row index of the cell.
+       * @param col: Column index of the cell.
+       * @throws An out_of_range exception if the input indexes are out of bounds.
+       * @returns: Value at the specified cell in the matrix.
+       */
       Scalar get(int row, int col) const {
          if (row < 0 || row >= rows || col < 0 || col >= cols) {
             throw std::out_of_range("Specified index is out of bounds");
@@ -85,7 +167,15 @@ class Matrix
          return matrix_data[row * cols + col];
       }
 
-      // Setter for specified index in the Matrix
+      /**
+       * SETTER
+       * Set the value of a specific cell in the matrix.
+       * @param row: Row index of the cell.
+       * @param col: Column index of the cell.
+       * @param value: Value to set in the specified cell.
+       * @throws An out_of_range exception if the input indexes are out of bounds.
+       * @returns: Void. Updates the matrix cell with the provided value.
+       */
       template<typename ValueType>
       void set(int row, int col, ValueType value) {
          static_assert(std::is_same<Scalar, ValueType>::value, "Provided value is of a different type than the matrix's Scalar type.");
@@ -97,7 +187,13 @@ class Matrix
          matrix_data[row * cols + col] = value;
       }
 
-      // Overloaded insertion "<<" operator for output
+      /**
+       * Overloaded insertion operator for streaming out the matrix content.
+       * Allows for easy printing of the matrix using standard output streams.
+       * @param os: The output stream to write to.
+       * @param matrix: The matrix object to be printed.
+       * @returns: The output stream after inserting the matrix content.
+       */
       friend std::ostream& operator<< (std::ostream& os, const Matrix<Scalar>& matrix) {
          for (int i = 0; i < matrix.rows; ++i) {
                for (int j = 0; j < matrix.cols; ++j) {
@@ -108,7 +204,13 @@ class Matrix
          return os;
       }
 
-      // Overloaded multiplication operator for matrix multiplication
+      /**
+       * Overloaded multiplication operator for matrix multiplication.
+       * Performs matrix multiplication on two conformant matrices.
+       * Note: Both matrices should have the same Scalar type.
+       * @param other_matrix: The second matrix to multiply with.
+       * @returns: Resultant matrix after multiplication.
+       */
       template<typename OtherScalar>
       Matrix<Scalar> operator*(const Matrix<OtherScalar>& other_matrix) const {
          
@@ -125,14 +227,19 @@ class Matrix
             for (int j = 0; j < other_cols; ++j) {
                result.matrix_data[i * other_cols + j] = 0; // Initialize result cell to 0
                for (int k = 0; k < cols; ++k) {
-                     result.matrix_data[i * other_cols + j] += matrix_data[i * cols + k] * other_matrix.get(k, j);
+                     result.matrix_data[i * other_cols + j] += matrix_data[i * cols + k] * other_matrix.get(k, j); 
                }
             }
          }
          return result;
       }
 
-      // Transpose our matrix
+      /**
+       * Transposes the current matrix by creating a new Matrix with swapped rows and cols.
+       * The function then swaps the values, deletes old matrix_data, and updates our matrix_data pointer 
+       * to the new transposed matrix.
+       * @returns: Void. The matrix object is transposed with matrix_data pointer updated.
+       */
       void transpose() {
       
          Scalar* transposed_data = new Scalar[rows * cols];
