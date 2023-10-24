@@ -22,7 +22,7 @@ class Matrix
       Matrix(int input_rows, int input_cols) 
          : matrix_data(new Scalar[input_rows * input_cols]), rows(input_rows), cols(input_cols) {}
 
-      // Constructor for taking in vector representation, e.g. 
+      // Constructor for taking in vector representation
       Matrix(int input_rows, int input_cols, std::initializer_list<std::initializer_list<Scalar>> init_list) 
          : matrix_data(new Scalar[input_rows * input_cols]), rows(input_rows), cols(input_cols) {
          
@@ -36,6 +36,9 @@ class Matrix
                matrix_data[row * cols + col] = elem;
                ++col;
             }
+            if (col != input_cols) {
+               throw std::invalid_argument("Incorrect number of elements in initializer list row");
+            }
             ++row;
          }
       }
@@ -46,7 +49,27 @@ class Matrix
          
          std::copy(other.matrix_data, other.matrix_data + rows * cols, matrix_data);
       }
+
+      // Move constructor
+      Matrix(Matrix<Scalar>&& other) noexcept
+         : matrix_data(std::move(other.matrix_data)), rows(std::move(other.rows)), cols(std::move(other.cols)) {}
       
+      // Copy assignment using copy-swap idiom
+      Matrix<Scalar>& operator=(Matrix<Scalar> other) {
+         std::swap(matrix_data, other.matrix_data);
+         std::swap(rows, other.rows);
+         std::swap(cols, other.cols);
+         return *this;
+      }
+
+      // Move assignment
+      Matrix<Scalar>& operator=(Matrix<Scalar>&& other) noexcept {
+         matrix_data = std::move(other.matrix_data);
+         rows = std::move(other.rows);
+         cols = std::move(other.cols);
+         return *this;
+      }
+
       // Destructor
       ~Matrix(){ delete [] matrix_data; }
 
@@ -54,7 +77,7 @@ class Matrix
       int getRows() const { return rows; }
       int getCols() const { return cols; }
 
-      // Getter for element in the Matrix
+      // Getter for specific element in the Matrix
       Scalar get(int row, int col) const {
          if (row < 0 || row >= rows || col < 0 || col >= cols) {
             throw std::out_of_range("Specified index is out of bounds");
@@ -72,7 +95,7 @@ class Matrix
          }
 
          matrix_data[row * cols + col] = value;
-   }
+      }
 
       // Overloaded insertion "<<" operator for output
       friend std::ostream& operator<< (std::ostream& os, const Matrix<Scalar>& matrix) {
@@ -85,32 +108,19 @@ class Matrix
          return os;
       }
 
-      Matrix<Scalar>& operator=(const Matrix<Scalar>& other) {
-         if (this != &other) {
-            delete[] matrix_data;
-
-            rows = other.rows;
-            cols = other.cols;
-            matrix_data = new Scalar[rows * cols];
-            std::copy(other.matrix_data, other.matrix_data + rows * cols, matrix_data);
-         }
-         return *this;
-      }
-
       // Overloaded multiplication operator for matrix multiplication
       template<typename OtherScalar>
       Matrix<Scalar> operator*(const Matrix<OtherScalar>& other_matrix) const {
          
+         // Check if both matrices are of the same Scalar type
          static_assert(std::is_same<Scalar, OtherScalar>::value, "Second matrix is of a different type than the first matrix's type.");
-         int other_cols = other_matrix.getCols();
-         
          // Check if matrices are conformant.
-         if (rows != other_cols) { 
+         if (cols != other_matrix.getRows()) { 
             throw std::invalid_argument("Matrices are not conformant for multiplication");
          }
          
-         Matrix<Scalar> result(rows, other_cols);  // Resultant matrix
-         
+         int other_cols = other_matrix.getCols();
+         Matrix<Scalar> result(rows, other_cols);  // Initialize resultant matrix
          for (int i = 0; i < rows; ++i) {
             for (int j = 0; j < other_cols; ++j) {
                result.matrix_data[i * other_cols + j] = 0; // Initialize result cell to 0
@@ -119,25 +129,20 @@ class Matrix
                }
             }
          }
-         
          return result;
       }
 
       // Transpose our matrix
       void transpose() {
+      
          Scalar* transposed_data = new Scalar[rows * cols];
-
          for (int i = 0; i < rows; ++i) {
             for (int j = 0; j < cols; ++j) {
                transposed_data[j * rows + i] = matrix_data[i * cols + j];
             }
          }
-
-         // Swap the rows and columns values
-         std::swap(rows, cols);
-
-         // Cleanup old matrix_data and update pointer
-         delete[] matrix_data;
+         std::swap(rows, cols); // Swap the rows and columns values
+         delete[] matrix_data; // Cleanup old matrix_data and update pointer
          matrix_data = transposed_data;
       }
 };
