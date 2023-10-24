@@ -21,7 +21,8 @@
  * 
  * The primary implementation of the Matrix itself is via the use of a C style contiguos array, instead of the more
  * straightforward nested vector implementation. This allows for slightly better access times and performance. 
- * This "flattened" matrix is accessed and manipulated with the member methods of the Matrix class.
+ * This "flattened" matrix is accessed and manipulated with the member methods of the Matrix class. The Matrix is also
+ * 0-indexed based with a getter and setter for accessing elements.
 */
 namespace LinearAlgebra {
 
